@@ -31,6 +31,20 @@ namespace Tests.Ravine
         }
 
         [Fact]
+        public async Task PropagateAsyncTest()
+        {
+            var propagator = new Propagator(Propagator.DefaultNeighborsGetter);
+            var context = new WaterContext(_map, propagator);
+            var drop = new WaterDrop(0.1);
+
+            context.AddDrop(drop, (2, 2));
+            await context.PropagateWaterAsync();
+            var drops = context.Drops;
+
+            Assert.Equal(4, drops.Count);
+        }
+
+        [Fact]
         public void MergeTest()
         {
             var propagator = new Propagator(Propagator.DefaultNeighborsGetter);

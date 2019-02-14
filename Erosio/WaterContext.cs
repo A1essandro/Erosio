@@ -36,12 +36,28 @@ namespace Erosio
             Absorb(absobtion ?? DefaultAbsorbtion);
         }
 
+        public async Task StepAsync(Func<double, double> absobtion = null)
+        {
+            await PropagateWaterAsync();
+            Merge();
+            Absorb(absobtion ?? DefaultAbsorbtion);
+        }
+
         /// <summary>
         /// Propagation drops on the map
         /// </summary>
         public void PropagateWater()
         {
             var newDrops = _propagator.Propagate(_heightmap, _drops);
+            _peplaceDrops(newDrops);
+        }
+
+        /// <summary>
+        /// Propagation drops on the map
+        /// </summary>
+        public async Task PropagateWaterAsync()
+        {
+            var newDrops = await _propagator.PropagateAsync(_heightmap, _drops);
             _peplaceDrops(newDrops);
         }
 

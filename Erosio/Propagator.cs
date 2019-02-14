@@ -34,19 +34,34 @@ namespace Erosio
 
             Parallel.ForEach(drops, drop =>
             {
-                var currentDropPosition = drop.Value;
-                var dropObj = drop.Key;
-                var moveRanks = _getMoveRanks(map, currentDropPosition, dropObj);
-                var rankSum = moveRanks.Sum(x => x.Value);
-                var moveFactors = _getMoveFactors(moveRanks, rankSum);
-                foreach (var targetCell in moveFactors)
-                {
-                    var watermassFactor = targetCell.Value;
-                    newDrops.TryAdd(new WaterDrop(dropObj.Mass * watermassFactor), targetCell.Key);
-                }
+                _propagateDrop(map, drop, newDrops);
             });
 
             return newDrops;
+        }
+
+        public async Task<IDictionary<WaterDrop, Vector>> PropagateAsync(double[,] map, IDictionary<WaterDrop, Vector> drops)
+        {
+            var newDrops = new ConcurrentDictionary<WaterDrop, Vector>();
+
+            var tasks = drops.Select(d => Task.Run(() => _propagateDrop(map, d, newDrops)));
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            return newDrops;
+        }
+
+        private void _propagateDrop(double[,] map, KeyValuePair<WaterDrop, Vector> drop, ConcurrentDictionary<WaterDrop, Vector> newDrops)
+        {
+            var currentDropPosition = drop.Value;
+            var dropObj = drop.Key;
+            var moveRanks = _getMoveRanks(map, currentDropPosition, dropObj);
+            var rankSum = moveRanks.Sum(x => x.Value);
+            var moveFactors = _getMoveFactors(moveRanks, rankSum);
+            foreach (var targetCell in moveFactors)
+            {
+                var watermassFactor = targetCell.Value;
+                newDrops.TryAdd(new WaterDrop(dropObj.Mass * watermassFactor), targetCell.Key);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
