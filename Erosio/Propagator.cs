@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Erosio
@@ -40,18 +41,22 @@ namespace Erosio
             return newDrops;
         }
 
-        public async Task<IDictionary<WaterDrop, Vector>> PropagateAsync(double[,] map, IDictionary<WaterDrop, Vector> drops)
+        public async Task<IDictionary<WaterDrop, Vector>> PropagateAsync(
+            double[,] map, IDictionary<WaterDrop, Vector> drops, CancellationToken ct = default(CancellationToken))
         {
             var newDrops = new ConcurrentDictionary<WaterDrop, Vector>();
 
-            var tasks = drops.Select(d => Task.Run(() => _propagateDrop(map, d, newDrops)));
+            var tasks = drops.Select(d => Task.Run(() => _propagateDrop(map, d, newDrops, ct), ct));
             await Task.WhenAll(tasks).ConfigureAwait(false);
 
             return newDrops;
         }
 
-        private void _propagateDrop(double[,] map, KeyValuePair<WaterDrop, Vector> drop, ConcurrentDictionary<WaterDrop, Vector> newDrops)
+        private void _propagateDrop(
+            double[,] map, KeyValuePair<WaterDrop, Vector> drop, ConcurrentDictionary<WaterDrop, Vector> newDrops, CancellationToken ct = default(CancellationToken))
         {
+            ct.ThrowIfCancellationRequested();
+
             var currentDropPosition = drop.Value;
             var dropObj = drop.Key;
             var moveRanks = _getMoveRanks(map, currentDropPosition, dropObj);

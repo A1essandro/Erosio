@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Erosio;
 using Xunit;
@@ -42,6 +43,20 @@ namespace Tests.Ravine
             var drops = context.Drops;
 
             Assert.Equal(4, drops.Count);
+        }
+
+        [Fact]
+        public async Task PropagateAsyncCancelTest()
+        {
+            var propagator = new Propagator(Propagator.DefaultNeighborsGetter);
+            var context = new WaterContext(_map, propagator);
+            var drop = new WaterDrop(0.1);
+
+            context.AddDrop(drop, (2, 2));
+            var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            await Assert.ThrowsAsync<TaskCanceledException>(() => context.PropagateWaterAsync(cts.Token));
         }
 
         [Fact]

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Erosio
@@ -36,9 +37,9 @@ namespace Erosio
             Absorb(absobtion ?? DefaultAbsorbtion);
         }
 
-        public async Task StepAsync(Func<double, double> absobtion = null)
+        public async Task StepAsync(Func<double, double> absobtion = null, CancellationToken ct = default(CancellationToken))
         {
-            await PropagateWaterAsync();
+            await PropagateWaterAsync(ct).ConfigureAwait(false);
             Merge();
             Absorb(absobtion ?? DefaultAbsorbtion);
         }
@@ -55,9 +56,11 @@ namespace Erosio
         /// <summary>
         /// Propagation drops on the map
         /// </summary>
-        public async Task PropagateWaterAsync()
+        public async Task PropagateWaterAsync(CancellationToken ct = default(CancellationToken))
         {
-            var newDrops = await _propagator.PropagateAsync(_heightmap, _drops);
+            ct.ThrowIfCancellationRequested();
+
+            var newDrops = await _propagator.PropagateAsync(_heightmap, _drops, ct).ConfigureAwait(false);
             _peplaceDrops(newDrops);
         }
 
