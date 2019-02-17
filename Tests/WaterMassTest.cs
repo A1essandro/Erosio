@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace Tests.Ravine
         [Fact]
         public void PropagateTest()
         {
-            var propagator = new Propagator(Propagator.DefaultNeighborsGetter);
+            var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
             var context = new WaterContext(_map, propagator);
             var drop = new WaterDrop(0.1);
 
@@ -34,7 +35,7 @@ namespace Tests.Ravine
         [Fact]
         public async Task PropagateAsyncTest()
         {
-            var propagator = new Propagator(Propagator.DefaultNeighborsGetter);
+            var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
             var context = new WaterContext(_map, propagator);
             var drop = new WaterDrop(0.1);
 
@@ -48,7 +49,7 @@ namespace Tests.Ravine
         [Fact]
         public async Task PropagateAsyncCancelTest()
         {
-            var propagator = new Propagator(Propagator.DefaultNeighborsGetter);
+            var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
             var context = new WaterContext(_map, propagator);
             var drop = new WaterDrop(0.1);
 
@@ -56,13 +57,13 @@ namespace Tests.Ravine
             var cts = new CancellationTokenSource();
             cts.Cancel();
 
-            await Assert.ThrowsAsync<TaskCanceledException>(() => context.PropagateWaterAsync(cts.Token));
+            await Assert.ThrowsAsync<OperationCanceledException>(() => context.PropagateWaterAsync(cts.Token));
         }
 
         [Fact]
         public void MergeTest()
         {
-            var propagator = new Propagator(Propagator.DefaultNeighborsGetter);
+            var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
             var context = new WaterContext(_map, propagator);
             var drop = new WaterDrop(0.1);
 

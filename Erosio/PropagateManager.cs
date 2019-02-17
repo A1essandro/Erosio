@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Erosio
 {
-    public class Propagator : IPropagator
+    public class PropagateManager : IPropagateManager
     {
 
 
@@ -22,9 +22,10 @@ namespace Erosio
                 new Vector(pos.X + 1, pos.Y)
             };
         };
+
         private readonly Func<Vector, IEnumerable<Vector>> _neighborsGetter;
 
-        public Propagator(Func<Vector, IEnumerable<Vector>> neighborsGetter = null)
+        public PropagateManager(Func<Vector, IEnumerable<Vector>> neighborsGetter = null)
         {
             _neighborsGetter = neighborsGetter ?? DefaultNeighborsGetter;
         }
@@ -51,6 +52,8 @@ namespace Erosio
 
             return newDrops;
         }
+
+        #region private methods
 
         private void _propagateDrop(
             double[,] map, KeyValuePair<WaterDrop, Vector> drop, ConcurrentDictionary<WaterDrop, Vector> newDrops, CancellationToken ct = default(CancellationToken))
@@ -103,6 +106,8 @@ namespace Erosio
         private static bool IsInMap(double[,] map, Vector v) => v.X >= 0 && v.Y >= 0 && v.X < map.GetLength(0) && v.Y < map.GetLength(1);
 
         private double GetHeight(double[,] map, Vector v) => map[v.X, v.Y];
+
+        #endregion
 
     }
 }
