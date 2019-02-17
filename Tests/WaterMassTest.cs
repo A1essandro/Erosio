@@ -1,70 +1,44 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Erosio;
 using Xunit;
 
 namespace Tests.Ravine
 {
 
+    [Obsolete]
     public class WaterMassTest
     {
-        private double[,] _map = new double[,] {
-                { 0.5, 0.5, 0.5, 0.5, 0.5 },
-                { 0.5, 0.5, 0.5, 0.5, 0.5 },
-                { 0.5, 0.5, 0.5, 0.5, 0.5 },
-                { 0.5, 0.5, 0.5, 0.5, 0.5 },
-                { 0.5, 0.5, 0.5, 0.5, 0.5 },
-            };
 
-        [Fact]
-        public void PropagateTest()
-        {
-            var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
-            var context = new WaterContext(_map, propagator);
-            var drop = new WaterDrop(0.1);
-
-            context.AddDrop(drop, (2, 2));
-            context.PropagateWater();
-            var drops = context.Drops;
-
-            Assert.Equal(4, drops.Count);
-        }
-
-        [Fact]
-        public async Task PropagateAsyncTest()
-        {
-            var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
-            var context = new WaterContext(_map, propagator);
-            var drop = new WaterDrop(0.1);
-
-            context.AddDrop(drop, (2, 2));
-            await context.PropagateWaterAsync();
-            var drops = context.Drops;
-
-            Assert.Equal(4, drops.Count);
-        }
-
-        [Fact]
-        public async Task PropagateAsyncCancelTest()
-        {
-            var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
-            var context = new WaterContext(_map, propagator);
-            var drop = new WaterDrop(0.1);
-
-            context.AddDrop(drop, (2, 2));
-            var cts = new CancellationTokenSource();
-            cts.Cancel();
-
-            await Assert.ThrowsAsync<OperationCanceledException>(() => context.PropagateWaterAsync(cts.Token));
-        }
+        private Dictionary<string, double[,]> _maps = new Dictionary<string, double[,]> {
+            {
+                "plato",
+                new double[,] {
+                    { 0.5, 0.5, 0.5, 0.5, 0.5 },
+                    { 0.5, 0.5, 0.5, 0.5, 0.5 },
+                    { 0.5, 0.5, 0.5, 0.5, 0.5 },
+                    { 0.5, 0.5, 0.5, 0.5, 0.5 },
+                    { 0.5, 0.5, 0.5, 0.5, 0.5 },
+                }
+            },
+            {
+                "pit",
+                new double[,] {
+                    { 0.5, 0.5, 0.5, 0.5, 0.5 },
+                    { 0.5, 0.4, 0.3, 0.4, 0.5 },
+                    { 0.5, 0.3, 0.2, 0.3, 0.5 },
+                    { 0.5, 0.4, 0.3, 0.4, 0.5 },
+                    { 0.5, 0.5, 0.5, 0.5, 0.5 },
+                }
+            }
+        };
 
         [Fact]
         public void MergeTest()
         {
             var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
-            var context = new WaterContext(_map, propagator);
+            var context = new WaterContext(_maps["plato"], propagator);
             var drop = new WaterDrop(0.1);
 
             context.AddDrop(drop, (2, 2));
