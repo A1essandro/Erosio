@@ -16,14 +16,19 @@ namespace Erosio
         private readonly double[,] _heightmap;
         private readonly ConcurrentDictionary<WaterDrop, Vector> _drops = new ConcurrentDictionary<WaterDrop, Vector>();
         private readonly IPropagateManager _propagator;
+        private readonly IMergeManager _mergeManager;
 
         public IDictionary<WaterDrop, Vector> Drops => _drops;
 
 
-        public WaterContext(double[,] heightmap, IPropagateManager propagator)
+        public WaterContext(
+            double[,] heightmap,
+            IPropagateManager propagator,
+            IMergeManager mergeManager)
         {
             _heightmap = heightmap;
             _propagator = propagator;
+            _mergeManager = mergeManager;
         }
 
         public void AddDrop(WaterDrop drop, (int, int) p) => AddDrop(drop, new Vector(p.Item1, p.Item2));
@@ -40,9 +45,11 @@ namespace Erosio
         public async Task StepAsync(Func<double, double> absobtion = null, CancellationToken ct = default(CancellationToken))
         {
             await PropagateWaterAsync(ct).ConfigureAwait(false);
-            Merge();
+            await MergeAsync(ct);
             Absorb(absobtion ?? DefaultAbsorbtion);
         }
+
+        #region propagation
 
         /// <summary>
         /// Propagation drops on the map
@@ -64,21 +71,26 @@ namespace Erosio
             _peplaceDrops(newDrops);
         }
 
+        #endregion
+
         /// <summary>
         /// Merge all drops are in the same cells
         /// </summary>
         public void Merge()
         {
-            var groups = _drops.GroupBy(x => x.Value).Where(x => x.Count() > 1).ToArray();
-            foreach (var group in groups)
-            {
-                var unmerged = group.Select(x => x.Key).ToArray();
-                var merged = unmerged.Aggregate((total, next) => total + next);
-                foreach (var key in unmerged)
-                    _drops.TryRemove(key, out var _);
-                _drops.TryAdd(merged, group.Key);
-            }
+            var newDrops = _mergeManager.Merge(_heightmap, _drops);
+            _peplaceDrops(newDrops);
         }
+
+        /// <summary>
+        /// Merge all drops are in the same cells
+        /// </summary>
+        public async Task MergeAsync(CancellationToken ct = default(CancellationToken))
+        {
+            var newDrops = await _mergeManager.MergeAsync(_heightmap, _drops, ct).ConfigureAwait(false);
+            _peplaceDrops(newDrops);
+        }
+
 
         /// <summary>
         /// Step of water absorption into the soil 
