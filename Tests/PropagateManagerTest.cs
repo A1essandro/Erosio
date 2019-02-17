@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using Erosio;
@@ -43,7 +44,7 @@ namespace Tests
         public void PropagateTest(string type, int x, int y, int expectedCount)
         {
             var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
-            var drops = new Dictionary<WaterDrop, Vector> { { new WaterDrop(0.1), new Vector(x, y) } };
+            var drops = new Dictionary<WaterDrop, Point> { { new WaterDrop(0.1), new Point(x, y) } };
 
             var newDrops = propagator.Propagate(_maps[type], drops);
 
@@ -60,7 +61,7 @@ namespace Tests
         public async Task PropagateTestAsync(string type, int x, int y, int expectedCount)
         {
             var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
-            var drops = new Dictionary<WaterDrop, Vector> { { new WaterDrop(0.1), new Vector(x, y) } };
+            var drops = new Dictionary<WaterDrop, Point> { { new WaterDrop(0.1), new Point(x, y) } };
 
             var newDrops = await propagator.PropagateAsync(_maps[type], drops);
 
@@ -71,7 +72,7 @@ namespace Tests
         public async Task PropagateAsyncCancelTest()
         {
             var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
-            var drops = new Dictionary<WaterDrop, Vector> { { new WaterDrop(0.1), new Vector(2, 2) } };
+            var drops = new Dictionary<WaterDrop, Point> { { new WaterDrop(0.1), new Point(2, 2) } };
 
             var cts = new CancellationTokenSource();
             cts.Cancel();

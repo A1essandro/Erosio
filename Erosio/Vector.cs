@@ -8,21 +8,21 @@ namespace Erosio
     public struct Vector : IEquatable<Vector>
     {
 
-        public Vector(int x, int y)
+        public Vector(double x, double y)
         {
             X = x;
             Y = y;
         }
 
-        public int X { get; private set; }
+        public double X { get; private set; }
 
-        public int Y { get; private set; }
+        public double Y { get; private set; }
 
         public static Vector operator +(Vector v1, Vector v2) => new Vector(v1.X + v2.X, v1.Y + v2.Y);
 
         public double GetLength() => Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2));
 
-        public override int GetHashCode() => ((17 + X) * 11) ^ (13 + Y) * 7;
+        public override int GetHashCode() => ((17 + X.GetHashCode()) * 11) ^ (13 + Y.GetHashCode()) * 7;
 
         public override bool Equals(object obj) => GetHashCode() == obj?.GetHashCode();
 

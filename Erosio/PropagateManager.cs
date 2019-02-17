@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -12,27 +13,27 @@ namespace Erosio
     {
 
 
-        public readonly static Func<Vector, IEnumerable<Vector>> DefaultNeighborsGetter = (Vector pos) =>
+        public readonly static Func<Point, IEnumerable<Point>> DefaultNeighborsGetter = (Point pos) =>
         {
-            return new List<Vector>
+            return new List<Point>
             {
-                new Vector(pos.X, pos.Y - 1),
-                new Vector(pos.X, pos.Y + 1),
-                new Vector(pos.X - 1, pos.Y),
-                new Vector(pos.X + 1, pos.Y)
+                new Point(pos.X, pos.Y - 1),
+                new Point(pos.X, pos.Y + 1),
+                new Point(pos.X - 1, pos.Y),
+                new Point(pos.X + 1, pos.Y)
             };
         };
 
-        private readonly Func<Vector, IEnumerable<Vector>> _neighborsGetter;
+        private readonly Func<Point, IEnumerable<Point>> _neighborsGetter;
 
-        public PropagateManager(Func<Vector, IEnumerable<Vector>> neighborsGetter = null)
+        public PropagateManager(Func<Point, IEnumerable<Point>> neighborsGetter = null)
         {
             _neighborsGetter = neighborsGetter ?? DefaultNeighborsGetter;
         }
 
-        public IDictionary<WaterDrop, Vector> Propagate(double[,] map, IDictionary<WaterDrop, Vector> drops)
+        public IDictionary<WaterDrop, Point> Propagate(double[,] map, IDictionary<WaterDrop, Point> drops)
         {
-            var newDrops = new ConcurrentDictionary<WaterDrop, Vector>();
+            var newDrops = new ConcurrentDictionary<WaterDrop, Point>();
 
             Parallel.ForEach(drops, drop =>
             {
@@ -42,10 +43,10 @@ namespace Erosio
             return newDrops;
         }
 
-        public async Task<IDictionary<WaterDrop, Vector>> PropagateAsync(
-            double[,] map, IDictionary<WaterDrop, Vector> drops, CancellationToken ct = default(CancellationToken))
+        public async Task<IDictionary<WaterDrop, Point>> PropagateAsync(
+            double[,] map, IDictionary<WaterDrop, Point> drops, CancellationToken ct = default(CancellationToken))
         {
-            var newDrops = new ConcurrentDictionary<WaterDrop, Vector>();
+            var newDrops = new ConcurrentDictionary<WaterDrop, Point>();
 
             var tasks = drops.Select(d => Task.Run(() => _propagateDrop(map, d, newDrops, ct), ct));
             await Task.WhenAll(tasks).ConfigureAwait(false);
@@ -56,7 +57,7 @@ namespace Erosio
         #region private methods
 
         private void _propagateDrop(
-            double[,] map, KeyValuePair<WaterDrop, Vector> drop, ConcurrentDictionary<WaterDrop, Vector> newDrops, CancellationToken ct = default(CancellationToken))
+            double[,] map, KeyValuePair<WaterDrop, Point> drop, ConcurrentDictionary<WaterDrop, Point> newDrops, CancellationToken ct = default(CancellationToken))
         {
             ct.ThrowIfCancellationRequested();
 
@@ -73,9 +74,9 @@ namespace Erosio
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Dictionary<Vector, double> _getMoveFactors(Dictionary<Vector, double> moveRanks, double rankSum)
+        private static Dictionary<Point, double> _getMoveFactors(Dictionary<Point, double> moveRanks, double rankSum)
         {
-            Dictionary<Vector, double> moveFactors;
+            Dictionary<Point, double> moveFactors;
             if (rankSum > 0)
                 moveFactors = moveRanks.ToDictionary(x => x.Key, x => x.Value / rankSum);
             else
@@ -84,9 +85,9 @@ namespace Erosio
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Dictionary<Vector, double> _getMoveRanks(double[,] map, Vector currentDropPosition, WaterDrop dropObj)
+        private Dictionary<Point, double> _getMoveRanks(double[,] map, Point currentDropPosition, WaterDrop dropObj)
         {
-            var moveRanks = new Dictionary<Vector, double>();
+            var moveRanks = new Dictionary<Point, double>();
             foreach (var targetCell in _neighborsGetter(currentDropPosition))
             {
                 if (!IsInMap(map, targetCell))
@@ -103,9 +104,9 @@ namespace Erosio
             return moveRanks;
         }
 
-        private static bool IsInMap(double[,] map, Vector v) => v.X >= 0 && v.Y >= 0 && v.X < map.GetLength(0) && v.Y < map.GetLength(1);
+        private static bool IsInMap(double[,] map, Point v) => v.X >= 0 && v.Y >= 0 && v.X < map.GetLength(0) && v.Y < map.GetLength(1);
 
-        private double GetHeight(double[,] map, Vector v) => map[v.X, v.Y];
+        private double GetHeight(double[,] map, Point v) => map[v.X, v.Y];
 
         #endregion
 

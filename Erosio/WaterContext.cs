@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -14,11 +15,11 @@ namespace Erosio
         public readonly static Func<double, double> DefaultAbsorbtion = oldVal => oldVal - 0.015; //TODO: Magic constant...
 
         private readonly double[,] _heightmap;
-        private readonly ConcurrentDictionary<WaterDrop, Vector> _drops = new ConcurrentDictionary<WaterDrop, Vector>();
+        private readonly ConcurrentDictionary<WaterDrop, Point> _drops = new ConcurrentDictionary<WaterDrop, Point>();
         private readonly IPropagateManager _propagator;
         private readonly IMergeManager _mergeManager;
 
-        public IDictionary<WaterDrop, Vector> Drops => _drops;
+        public IDictionary<WaterDrop, Point> Drops => _drops;
 
 
         public WaterContext(
@@ -31,9 +32,9 @@ namespace Erosio
             _mergeManager = mergeManager;
         }
 
-        public void AddDrop(WaterDrop drop, (int, int) p) => AddDrop(drop, new Vector(p.Item1, p.Item2));
+        public void AddDrop(WaterDrop drop, (int, int) p) => AddDrop(drop, new Point(p.Item1, p.Item2));
 
-        public void AddDrop(WaterDrop drop, Vector position) => _drops.TryAdd(drop, position);
+        public void AddDrop(WaterDrop drop, Point position) => _drops.TryAdd(drop, position);
 
         public void Step(Func<double, double> absobtion = null)
         {
@@ -107,7 +108,7 @@ namespace Erosio
             }
         }
 
-        private void _peplaceDrops(IDictionary<WaterDrop, Vector> newDrops)
+        private void _peplaceDrops(IDictionary<WaterDrop, Point> newDrops)
         {
             _drops.Clear();
             foreach (var drop in newDrops)

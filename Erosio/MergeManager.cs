@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,9 +8,9 @@ namespace Erosio
 {
     public class MergeManager : IMergeManager
     {
-        public IDictionary<WaterDrop, Vector> Merge(double[,] map, IDictionary<WaterDrop, Vector> drops)
+        public IDictionary<WaterDrop, Point> Merge(double[,] map, IDictionary<WaterDrop, Point> drops)
         {
-            var newDrops = new Dictionary<WaterDrop, Vector>();
+            var newDrops = new Dictionary<WaterDrop, Point>();
             var groups = drops.GroupBy(x => x.Value).Where(x => x.Count() > 1).ToArray();
             foreach (var group in groups)
             {
@@ -21,8 +22,8 @@ namespace Erosio
             return newDrops;
         }
 
-        public Task<IDictionary<WaterDrop, Vector>> MergeAsync(
-            double[,] map, IDictionary<WaterDrop, Vector> drops, CancellationToken ct = default(CancellationToken))
+        public Task<IDictionary<WaterDrop, Point>> MergeAsync(
+            double[,] map, IDictionary<WaterDrop, Point> drops, CancellationToken ct = default(CancellationToken))
         {
             ct.ThrowIfCancellationRequested();
 
