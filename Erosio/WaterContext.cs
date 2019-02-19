@@ -17,7 +17,10 @@ namespace Erosio
         private readonly double[,] _heightmap;
         private readonly ConcurrentDictionary<WaterDrop, Point> _drops = new ConcurrentDictionary<WaterDrop, Point>();
         private readonly IPropagateManager _propagator;
+        
         private readonly IMergeManager _mergeManager;
+
+        private readonly IAbsorptionManager _absorptionManager;
 
         public IDictionary<WaterDrop, Point> Drops => _drops;
 
@@ -25,11 +28,13 @@ namespace Erosio
         public WaterContext(
             double[,] heightmap,
             IPropagateManager propagator,
-            IMergeManager mergeManager)
+            IMergeManager mergeManager,
+            IAbsorptionManager absorptionManager)
         {
             _heightmap = heightmap;
             _propagator = propagator;
             _mergeManager = mergeManager;
+            _absorptionManager = absorptionManager;
         }
 
         public void AddDrop(WaterDrop drop, (int, int) p) => AddDrop(drop, new Point(p.Item1, p.Item2));
