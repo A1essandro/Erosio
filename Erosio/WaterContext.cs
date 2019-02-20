@@ -15,15 +15,18 @@ namespace Erosio
         public readonly static Func<double, double> DefaultAbsorbtion = oldVal => oldVal - 0.015; //TODO: Magic constant...
 
         private readonly double[,] _heightmap;
-        private readonly ConcurrentDictionary<WaterDrop, Point> _drops = new ConcurrentDictionary<WaterDrop, Point>();
+        private readonly Dictionary<WaterDrop, Point> _drops = new Dictionary<WaterDrop, Point>();
         private readonly IPropagateManager _propagator;
-        
         private readonly IMergeManager _mergeManager;
-
         private readonly IAbsorptionManager _absorptionManager;
 
-        public IDictionary<WaterDrop, Point> Drops => _drops;
-
+        /// <summary>
+        /// Copy dictionary of drops in context
+        /// </summary>
+        /// <param name="x.Key"></param>
+        /// <param name="x.Value"></param>
+        /// <returns></returns>
+        public IDictionary<WaterDrop, Point> Drops => _drops.ToDictionary(x => x.Key, x => x.Value);
 
         public WaterContext(
             double[,] heightmap,
@@ -39,20 +42,20 @@ namespace Erosio
 
         public void AddDrop(WaterDrop drop, (int, int) p) => AddDrop(drop, new Point(p.Item1, p.Item2));
 
-        public void AddDrop(WaterDrop drop, Point position) => _drops.TryAdd(drop, position);
+        public void AddDrop(WaterDrop drop, Point position) => _drops.Add(drop, position);
 
         public void Step(Func<double, double> absobtion = null)
         {
             PropagateWater();
             Merge();
-            Absorb(absobtion ?? DefaultAbsorbtion);
+            Absorb();
         }
 
         public async Task StepAsync(Func<double, double> absobtion = null, CancellationToken ct = default(CancellationToken))
         {
             await PropagateWaterAsync(ct).ConfigureAwait(false);
             await MergeAsync(ct);
-            Absorb(absobtion ?? DefaultAbsorbtion);
+            await AbsorbAsync(ct);
         }
 
         #region propagation
@@ -62,7 +65,7 @@ namespace Erosio
         /// </summary>
         public void PropagateWater()
         {
-            var newDrops = _propagator.Propagate(_heightmap, _drops);
+            var newDrops = _propagator.Propagate(_heightmap, Drops);
             _peplaceDrops(newDrops);
         }
 
@@ -73,11 +76,13 @@ namespace Erosio
         {
             ct.ThrowIfCancellationRequested();
 
-            var newDrops = await _propagator.PropagateAsync(_heightmap, _drops, ct).ConfigureAwait(false);
+            var newDrops = await _propagator.PropagateAsync(_heightmap, Drops, ct).ConfigureAwait(false);
             _peplaceDrops(newDrops);
         }
 
         #endregion
+
+        #region  merge
 
         /// <summary>
         /// Merge all drops are in the same cells
@@ -93,7 +98,20 @@ namespace Erosio
         /// </summary>
         public async Task MergeAsync(CancellationToken ct = default(CancellationToken))
         {
-            var newDrops = await _mergeManager.MergeAsync(_heightmap, _drops, ct).ConfigureAwait(false);
+            var newDrops = await _mergeManager.MergeAsync(_heightmap, Drops, ct).ConfigureAwait(false);
+            _peplaceDrops(newDrops);
+        }
+
+        #endregion
+
+        #region absorption
+
+        /// <summary>
+        /// Step of water absorption into the soil 
+        /// </summary>
+        public void Absorb()
+        {
+            var newDrops = _absorptionManager.Absorb(_heightmap, Drops);
             _peplaceDrops(newDrops);
         }
 
@@ -101,26 +119,26 @@ namespace Erosio
         /// <summary>
         /// Step of water absorption into the soil 
         /// </summary>
-        /// <param name="absobtion"></param>
-        public void Absorb(Func<double, double> absobtion)
+        public async Task AbsorbAsync(CancellationToken ct = default(CancellationToken))
         {
-            var drops = _drops.ToArray();
-            _drops.Clear();
-            foreach (var drop in drops)
-            {
-                var newMass = DefaultAbsorbtion(drop.Key.Mass);
-                _drops.TryAdd(new WaterDrop(newMass), drop.Value);
-            }
+            var newDrops = await _absorptionManager.AbsorbAsync(_heightmap, Drops, ct).ConfigureAwait(false);
+            _peplaceDrops(newDrops);
         }
+
+        #endregion
+
+        #region private methods
 
         private void _peplaceDrops(IDictionary<WaterDrop, Point> newDrops)
         {
             _drops.Clear();
             foreach (var drop in newDrops)
             {
-                _drops.TryAdd(drop.Key, drop.Value);
+                _drops.Add(drop.Key, drop.Value);
             }
         }
+
+        #endregion
 
     }
 }

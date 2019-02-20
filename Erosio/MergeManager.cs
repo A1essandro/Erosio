@@ -27,7 +27,8 @@ namespace Erosio
         {
             ct.ThrowIfCancellationRequested();
 
-            return Task.Run(() => Merge(map, drops), ct);
+            var result = Merge(map, drops);
+            return Task.FromResult(result);
         }
     }
 }

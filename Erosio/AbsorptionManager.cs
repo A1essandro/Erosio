@@ -36,7 +36,8 @@ namespace Erosio
         {
             ct.ThrowIfCancellationRequested();
             
-            return Task.FromResult(Absorb(map, drops) as IDictionary<WaterDrop, Point>);
+            var result = Absorb(map, drops);
+            return Task.FromResult(result);
         }
 
     }

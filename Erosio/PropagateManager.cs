@@ -33,31 +33,33 @@ namespace Erosio
 
         public IDictionary<WaterDrop, Point> Propagate(double[,] map, IDictionary<WaterDrop, Point> drops)
         {
-            var newDrops = new ConcurrentDictionary<WaterDrop, Point>();
+            return _propagateAll(map, drops);
+        }
 
-            Parallel.ForEach(drops, drop =>
+        private IDictionary<WaterDrop, Point> _propagateAll(double[,] map, IDictionary<WaterDrop, Point> drops)
+        {
+            var newDrops = new Dictionary<WaterDrop, Point>();
+
+            foreach (var drop in drops)
             {
                 _propagateDrop(map, drop, newDrops);
-            });
+            }
 
             return newDrops;
         }
 
-        public async Task<IDictionary<WaterDrop, Point>> PropagateAsync(
+        public Task<IDictionary<WaterDrop, Point>> PropagateAsync(
             double[,] map, IDictionary<WaterDrop, Point> drops, CancellationToken ct = default(CancellationToken))
         {
-            var newDrops = new ConcurrentDictionary<WaterDrop, Point>();
+            ct.ThrowIfCancellationRequested();
 
-            var tasks = drops.Select(d => Task.Run(() => _propagateDrop(map, d, newDrops, ct), ct));
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-
-            return newDrops;
+            return Task.FromResult(_propagateAll(map, drops));
         }
 
         #region private methods
 
         private void _propagateDrop(
-            double[,] map, KeyValuePair<WaterDrop, Point> drop, ConcurrentDictionary<WaterDrop, Point> newDrops, CancellationToken ct = default(CancellationToken))
+            double[,] map, KeyValuePair<WaterDrop, Point> drop, Dictionary<WaterDrop, Point> newDrops, CancellationToken ct = default(CancellationToken))
         {
             ct.ThrowIfCancellationRequested();
 
@@ -69,7 +71,7 @@ namespace Erosio
             foreach (var targetCell in moveFactors)
             {
                 var watermassFactor = targetCell.Value;
-                newDrops.TryAdd(new WaterDrop(dropObj.Mass * watermassFactor), targetCell.Key);
+                newDrops.Add(new WaterDrop(dropObj.Mass * watermassFactor), targetCell.Key);
             }
         }
 
