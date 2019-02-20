@@ -71,8 +71,18 @@ namespace Erosio
             foreach (var targetCell in moveFactors)
             {
                 var watermassFactor = targetCell.Value;
-                newDrops.Add(new WaterDrop(dropObj.Mass * watermassFactor), targetCell.Key);
+                var speed = CalculateSpeed(map, drop, dropObj, targetCell);
+                newDrops.Add(new WaterDrop(dropObj.Mass * watermassFactor, speed), targetCell.Key);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector CalculateSpeed(double[,] map, KeyValuePair<WaterDrop, Point> drop, WaterDrop dropObj, KeyValuePair<Point, double> targetCell)
+        {
+            var scalarSpeed = GetHeight(map, drop.Value) - GetHeight(map, targetCell.Key);
+            var unitVectorSpeed = new Vector(targetCell.Key.X - drop.Value.X, targetCell.Key.Y - drop.Value.Y);
+            var speed = scalarSpeed * unitVectorSpeed;
+            return speed + dropObj.Speed;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -108,7 +118,8 @@ namespace Erosio
 
         private static bool IsInMap(double[,] map, Point v) => v.X >= 0 && v.Y >= 0 && v.X < map.GetLength(0) && v.Y < map.GetLength(1);
 
-        private double GetHeight(double[,] map, Point v) => map[v.X, v.Y];
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double GetHeight(double[,] map, Point v) => map[v.X, v.Y];
 
         #endregion
 

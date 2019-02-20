@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Erosio;
@@ -66,6 +67,18 @@ namespace Tests
             var newDrops = await propagator.PropagateAsync(_maps[type], drops);
 
             Assert.Equal(expectedCount, newDrops.Count);
+        }
+
+        [Fact]
+        public void PropagateToPitSpeedTest()
+        {
+            var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
+            var drops = new Dictionary<WaterDrop, Point> { { new WaterDrop(0.1), new Point(1, 2) } };
+
+            var newDrop = propagator.Propagate(_maps["pit"], drops).Single().Key;
+
+            Assert.True(newDrop.Speed.Length > 0);
+            Assert.True(Vector.IsCollinear(newDrop.Speed, new Vector(1, 0)));
         }
 
         [Fact]

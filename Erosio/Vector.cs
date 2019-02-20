@@ -12,7 +12,10 @@ namespace Erosio
         {
             X = x;
             Y = y;
+            _length = Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2));
         }
+
+        private double _length;
 
         public double X { get; private set; }
 
@@ -20,13 +23,19 @@ namespace Erosio
 
         public static Vector operator +(Vector v1, Vector v2) => new Vector(v1.X + v2.X, v1.Y + v2.Y);
 
-        public double GetLength() => Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2));
+        public double Length => _length;
 
         public override int GetHashCode() => ((17 + X.GetHashCode()) * 11) ^ (13 + Y.GetHashCode()) * 7;
 
         public override bool Equals(object obj) => GetHashCode() == obj?.GetHashCode();
 
         public bool Equals(Vector other) => GetHashCode() == other.GetHashCode();
+
+        public static bool IsCollinear(Vector v1, Vector v2) => v1.X / v1.Y == v2.X / v2.Y;
+
+        public static Vector operator *(Vector v, double s) => new Vector(v.X * s, v.Y * s);
+
+        public static Vector operator *(double s, Vector v) => v * s;
 
         public static bool operator ==(Vector drop1, Vector drop2) => drop1.Equals(drop2);
 
