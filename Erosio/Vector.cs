@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Drawing;
 
 namespace Erosio
 {
@@ -12,6 +13,13 @@ namespace Erosio
         {
             X = x;
             Y = y;
+            _length = Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2));
+        }
+
+        public Vector(Point a, Point b)
+        {
+            X = b.X - a.X;
+            Y = b.Y - a.Y;
             _length = Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2));
         }
 
@@ -32,6 +40,13 @@ namespace Erosio
         public bool Equals(Vector other) => GetHashCode() == other.GetHashCode();
 
         public static bool IsCollinear(Vector v1, Vector v2) => v1.X / v1.Y == v2.X / v2.Y;
+
+        public static double GetAngle(Vector v1, Vector v2)
+        {
+            var scalar = (v1.X * v2.X + v1.Y * v2.Y) / v1.Length * v2.Length;
+
+            return Math.Acos(scalar);
+        }
 
         public static Vector operator *(Vector v, double s) => new Vector(v.X * s, v.Y * s);
 

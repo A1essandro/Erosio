@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,7 +10,6 @@ namespace Erosio
 {
     public class PropagateManager : IPropagateManager
     {
-
 
         public readonly static Func<Point, IEnumerable<Point>> DefaultNeighborsGetter = (Point pos) =>
         {
@@ -42,7 +40,10 @@ namespace Erosio
 
             foreach (var drop in drops)
             {
-                _propagateDrop(map, drop, newDrops);
+                foreach (var newDrop in _propagateDrop(map, drop))
+                {
+                    newDrops.Add(newDrop.Key, newDrop.Value);
+                }
             }
 
             return newDrops;
@@ -58,34 +59,30 @@ namespace Erosio
 
         #region private methods
 
-        private void _propagateDrop(
-            double[,] map, KeyValuePair<WaterDrop, Point> drop, Dictionary<WaterDrop, Point> newDrops, CancellationToken ct = default(CancellationToken))
+        private IEnumerable<KeyValuePair<WaterDrop, Point>> _propagateDrop(
+            double[,] map, KeyValuePair<WaterDrop, Point> drop, CancellationToken ct = default(CancellationToken))
         {
             ct.ThrowIfCancellationRequested();
 
-            var currentDropPosition = drop.Value;
-            var dropObj = drop.Key;
-            var moveRanks = _getMoveRanks(map, currentDropPosition, dropObj);
+            var moveRanks = _getMoveRanks(map, drop);
             var rankSum = moveRanks.Sum(x => x.Value);
             var moveFactors = _getMoveFactors(moveRanks, rankSum);
             foreach (var targetCell in moveFactors)
             {
                 var watermassFactor = targetCell.Value;
-                var speed = CalculateSpeed(map, drop, dropObj, targetCell);
-                newDrops.Add(new WaterDrop(dropObj.Mass * watermassFactor, speed), targetCell.Key);
+                var speed = CalculateSpeed(map, drop, targetCell);
+                yield return new KeyValuePair<WaterDrop, Point>(new WaterDrop(drop.Key.Mass * watermassFactor, speed), targetCell.Key);
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Vector CalculateSpeed(double[,] map, KeyValuePair<WaterDrop, Point> drop, WaterDrop dropObj, KeyValuePair<Point, double> targetCell)
+        private static Vector CalculateSpeed(double[,] map, KeyValuePair<WaterDrop, Point> drop, KeyValuePair<Point, double> targetCell)
         {
             var scalarSpeed = GetHeight(map, drop.Value) - GetHeight(map, targetCell.Key);
-            var unitVectorSpeed = new Vector(targetCell.Key.X - drop.Value.X, targetCell.Key.Y - drop.Value.Y);
+            var unitVectorSpeed = new Vector(drop.Value, targetCell.Key);
             var speed = scalarSpeed * unitVectorSpeed;
-            return speed + dropObj.Speed;
+            return speed + drop.Key.Speed;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Dictionary<Point, double> _getMoveFactors(Dictionary<Point, double> moveRanks, double rankSum)
         {
             Dictionary<Point, double> moveFactors;
@@ -96,21 +93,29 @@ namespace Erosio
             return moveFactors;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Dictionary<Point, double> _getMoveRanks(double[,] map, Point currentDropPosition, WaterDrop dropObj)
+        private Dictionary<Point, double> _getMoveRanks(double[,] map, KeyValuePair<WaterDrop, Point> drop)
         {
+            var currentDropPosition = drop.Value;
+            var dropObj = drop.Key;
             var moveRanks = new Dictionary<Point, double>();
             foreach (var targetCell in _neighborsGetter(currentDropPosition))
             {
                 if (!IsInMap(map, targetCell))
                     continue;
-                var rank = GetHeight(map, currentDropPosition) - GetHeight(map, targetCell);
-                if (rank < 0)
+                var heightDiff = GetHeight(map, currentDropPosition) - GetHeight(map, targetCell);
+                if (heightDiff < 0)
                     continue;
-                var range = Math.Sqrt(Math.Pow(currentDropPosition.X + dropObj.Speed.X - targetCell.X, 2)
-                    + Math.Pow(currentDropPosition.Y + dropObj.Speed.Y - targetCell.Y, 2));
-                var factor = range != 0 ? range : 0.00001;
-                moveRanks[targetCell] = rank / factor;
+                if (dropObj.Speed.Length > 0)
+                {
+                    var angle = Vector.GetAngle(dropObj.Speed, new Vector(currentDropPosition, targetCell));
+                    var factor = 0.5 * Math.Abs(angle);
+                    moveRanks[targetCell] = heightDiff / factor;
+                }
+                else
+                {
+                    var factor = Math.PI / 3; //TODO
+                    moveRanks[targetCell] = heightDiff / factor;
+                }
             }
 
             return moveRanks;
@@ -118,7 +123,6 @@ namespace Erosio
 
         private static bool IsInMap(double[,] map, Point v) => v.X >= 0 && v.Y >= 0 && v.X < map.GetLength(0) && v.Y < map.GetLength(1);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double GetHeight(double[,] map, Point v) => map[v.X, v.Y];
 
         #endregion
