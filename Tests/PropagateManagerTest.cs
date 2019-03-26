@@ -1,10 +1,10 @@
+using Erosio;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Erosio;
+using VectorAndPoint.ValTypes;
 using Xunit;
 
 namespace Tests
@@ -45,7 +45,7 @@ namespace Tests
         public void PropagateTest(string type, int x, int y, int expectedCount)
         {
             var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
-            var drops = new Dictionary<WaterDrop, Point> { { new WaterDrop(0.1), new Point(x, y) } };
+            var drops = new Dictionary<WaterDrop, PointInt> { { new WaterDrop(0.1), new PointInt(x, y) } };
 
             var newDrops = propagator.Propagate(_maps[type], drops);
 
@@ -62,7 +62,7 @@ namespace Tests
         public async Task PropagateTestAsync(string type, int x, int y, int expectedCount)
         {
             var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
-            var drops = new Dictionary<WaterDrop, Point> { { new WaterDrop(0.1), new Point(x, y) } };
+            var drops = new Dictionary<WaterDrop, PointInt> { { new WaterDrop(0.1), new PointInt(x, y) } };
 
             var newDrops = await propagator.PropagateAsync(_maps[type], drops);
 
@@ -73,7 +73,7 @@ namespace Tests
         public void PropagateToPitSpeedTest()
         {
             var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
-            var drops = new Dictionary<WaterDrop, Point> { { new WaterDrop(0.1), new Point(1, 2) } };
+            var drops = new Dictionary<WaterDrop, PointInt> { { new WaterDrop(0.1), new PointInt(1, 2) } };
 
             var newDrop = propagator.Propagate(_maps["pit"], drops).Single().Key;
 
@@ -85,7 +85,7 @@ namespace Tests
         public async Task PropagateAsyncCancelTest()
         {
             var propagator = new PropagateManager(PropagateManager.DefaultNeighborsGetter);
-            var drops = new Dictionary<WaterDrop, Point> { { new WaterDrop(0.1), new Point(2, 2) } };
+            var drops = new Dictionary<WaterDrop, PointInt> { { new WaterDrop(0.1), new PointInt(2, 2) } };
 
             var cts = new CancellationTokenSource();
             cts.Cancel();

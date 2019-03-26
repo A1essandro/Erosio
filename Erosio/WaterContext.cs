@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using VectorAndPoint.ValTypes;
 
 namespace Erosio
 {
@@ -15,7 +13,7 @@ namespace Erosio
         public readonly static Func<double, double> DefaultAbsorbtion = oldVal => oldVal - 0.015; //TODO: Magic constant...
 
         private readonly double[,] _heightmap;
-        private readonly Dictionary<WaterDrop, Point> _drops = new Dictionary<WaterDrop, Point>();
+        private readonly Dictionary<WaterDrop, PointInt> _drops = new Dictionary<WaterDrop, PointInt>();
         private readonly IPropagateManager _propagator;
         private readonly IMergeManager _mergeManager;
         private readonly IAbsorptionManager _absorptionManager;
@@ -26,7 +24,7 @@ namespace Erosio
         /// <param name="x.Key"></param>
         /// <param name="x.Value"></param>
         /// <returns></returns>
-        public IDictionary<WaterDrop, Point> Drops => _drops.ToDictionary(x => x.Key, x => x.Value);
+        public IDictionary<WaterDrop, PointInt> Drops => _drops.ToDictionary(x => x.Key, x => x.Value);
 
         public WaterContext(
             double[,] heightmap,
@@ -40,9 +38,9 @@ namespace Erosio
             _absorptionManager = absorptionManager;
         }
 
-        public void AddDrop(WaterDrop drop, (int, int) p) => AddDrop(drop, new Point(p.Item1, p.Item2));
+        public void AddDrop(WaterDrop drop, (int, int) p) => AddDrop(drop, new PointInt(p.Item1, p.Item2));
 
-        public void AddDrop(WaterDrop drop, Point position) => _drops.Add(drop, position);
+        public void AddDrop(WaterDrop drop, PointInt position) => _drops.Add(drop, position);
 
         public void Step(Func<double, double> absobtion = null)
         {
@@ -129,7 +127,7 @@ namespace Erosio
 
         #region private methods
 
-        private void _peplaceDrops(IDictionary<WaterDrop, Point> newDrops)
+        private void _peplaceDrops(IDictionary<WaterDrop, PointInt> newDrops)
         {
             _drops.Clear();
             foreach (var drop in newDrops)

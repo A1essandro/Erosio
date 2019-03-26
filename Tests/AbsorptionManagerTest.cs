@@ -1,7 +1,7 @@
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
 using Erosio;
+using System.Collections.Generic;
+using System.Linq;
+using VectorAndPoint.ValTypes;
 using Xunit;
 
 namespace Tests
@@ -20,8 +20,8 @@ namespace Tests
         {
             var initialMass = 1.0;
             var manager = new AbsorptionManager();
-            var drops = new Dictionary<WaterDrop, Point> {
-                { new WaterDrop(initialMass), new Point(0, 0) }
+            var drops = new Dictionary<WaterDrop, PointInt> {
+                { new WaterDrop(initialMass), new PointInt(0, 0) }
             };
 
             var newDrops = manager.Absorb(_map, drops);

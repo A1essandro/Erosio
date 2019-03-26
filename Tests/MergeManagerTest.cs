@@ -1,6 +1,6 @@
-using System.Collections.Generic;
-using System.Drawing;
 using Erosio;
+using System.Collections.Generic;
+using VectorAndPoint.ValTypes;
 using Xunit;
 
 namespace Tests
@@ -18,12 +18,12 @@ namespace Tests
         public void MergeTest()
         {
             var mergeManager = new MergeManager();
-            var _0_0 = new Point(0, 0);
-            var _0_1 = new Point(0, 1);
-            var _1_1 = new Point(1, 1);
+            var _0_0 = new PointInt(0, 0);
+            var _0_1 = new PointInt(0, 1);
+            var _1_1 = new PointInt(1, 1);
             var m = 0.1;
 
-            var drops = new Dictionary<WaterDrop, Point> {
+            var drops = new Dictionary<WaterDrop, PointInt> {
                 { new WaterDrop(m), _0_0 },
                 { new WaterDrop(m), _0_0 },
                 { new WaterDrop(m, new Vector(0, 1)), _0_1 },

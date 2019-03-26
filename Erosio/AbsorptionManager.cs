@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using VectorAndPoint.ValTypes;
 
 namespace Erosio
 {
@@ -19,9 +18,9 @@ namespace Erosio
             _absorbtionFunc = absorbtionFunc ?? DefaultAbsorbtion;
         }
 
-        public IDictionary<WaterDrop, Point> Absorb(double[,] map, IDictionary<WaterDrop, Point> drops)
+        public IDictionary<WaterDrop, PointInt> Absorb(double[,] map, IDictionary<WaterDrop, PointInt> drops)
         {
-            var result = new Dictionary<WaterDrop, Point>();
+            var result = new Dictionary<WaterDrop, PointInt>();
 
             foreach (var drop in drops)
             {
@@ -32,7 +31,7 @@ namespace Erosio
             return result;
         }
 
-        public Task<IDictionary<WaterDrop, Point>> AbsorbAsync(double[,] map, IDictionary<WaterDrop, Point> drops, CancellationToken ct = default(CancellationToken))
+        public Task<IDictionary<WaterDrop, PointInt>> AbsorbAsync(double[,] map, IDictionary<WaterDrop, PointInt> drops, CancellationToken ct = default(CancellationToken))
         {
             ct.ThrowIfCancellationRequested();
             

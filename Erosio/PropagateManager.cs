@@ -1,42 +1,42 @@
+using Erosio.Internal.Extensions;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using VectorAndPoint.ValTypes;
 
 namespace Erosio
 {
     public class PropagateManager : IPropagateManager
     {
 
-        public readonly static Func<Point, IEnumerable<Point>> DefaultNeighborsGetter = (Point pos) =>
+        public readonly static Func<PointInt, IEnumerable<PointInt>> DefaultNeighborsGetter = (PointInt pos) =>
         {
-            return new List<Point>
+            return new List<PointInt>
             {
-                new Point(pos.X, pos.Y - 1),
-                new Point(pos.X, pos.Y + 1),
-                new Point(pos.X - 1, pos.Y),
-                new Point(pos.X + 1, pos.Y)
+                new PointInt(pos.X, pos.Y - 1),
+                new PointInt(pos.X, pos.Y + 1),
+                new PointInt(pos.X - 1, pos.Y),
+                new PointInt(pos.X + 1, pos.Y)
             };
         };
 
-        private readonly Func<Point, IEnumerable<Point>> _neighborsGetter;
+        private readonly Func<PointInt, IEnumerable<PointInt>> _neighborsGetter;
 
-        public PropagateManager(Func<Point, IEnumerable<Point>> neighborsGetter = null)
+        public PropagateManager(Func<PointInt, IEnumerable<PointInt>> neighborsGetter = null)
         {
             _neighborsGetter = neighborsGetter ?? DefaultNeighborsGetter;
         }
 
-        public IDictionary<WaterDrop, Point> Propagate(double[,] map, IDictionary<WaterDrop, Point> drops)
+        public IDictionary<WaterDrop, PointInt> Propagate(double[,] map, IDictionary<WaterDrop, PointInt> drops)
         {
             return _propagateAll(map, drops);
         }
 
-        private IDictionary<WaterDrop, Point> _propagateAll(double[,] map, IDictionary<WaterDrop, Point> drops)
+        private IDictionary<WaterDrop, PointInt> _propagateAll(double[,] map, IDictionary<WaterDrop, PointInt> drops)
         {
-            var newDrops = new Dictionary<WaterDrop, Point>();
+            var newDrops = new Dictionary<WaterDrop, PointInt>();
 
             foreach (var drop in drops)
             {
@@ -49,8 +49,8 @@ namespace Erosio
             return newDrops;
         }
 
-        public Task<IDictionary<WaterDrop, Point>> PropagateAsync(
-            double[,] map, IDictionary<WaterDrop, Point> drops, CancellationToken ct = default(CancellationToken))
+        public Task<IDictionary<WaterDrop, PointInt>> PropagateAsync(
+            double[,] map, IDictionary<WaterDrop, PointInt> drops, CancellationToken ct = default(CancellationToken))
         {
             ct.ThrowIfCancellationRequested();
 
@@ -59,8 +59,8 @@ namespace Erosio
 
         #region private methods
 
-        private IEnumerable<KeyValuePair<WaterDrop, Point>> _propagateDrop(
-            double[,] map, KeyValuePair<WaterDrop, Point> drop, CancellationToken ct = default(CancellationToken))
+        private IEnumerable<KeyValuePair<WaterDrop, PointInt>> _propagateDrop(
+            double[,] map, KeyValuePair<WaterDrop, PointInt> drop, CancellationToken ct = default(CancellationToken))
         {
             ct.ThrowIfCancellationRequested();
 
@@ -71,21 +71,21 @@ namespace Erosio
             {
                 var watermassFactor = targetCell.Value;
                 var speed = CalculateSpeed(map, drop, targetCell);
-                yield return new KeyValuePair<WaterDrop, Point>(new WaterDrop(drop.Key.Mass * watermassFactor, speed), targetCell.Key);
+                yield return new KeyValuePair<WaterDrop, PointInt>(new WaterDrop(drop.Key.Mass * watermassFactor, speed), targetCell.Key);
             }
         }
 
-        private static Vector CalculateSpeed(double[,] map, KeyValuePair<WaterDrop, Point> drop, KeyValuePair<Point, double> targetCell)
+        private static Vector CalculateSpeed(double[,] map, KeyValuePair<WaterDrop, PointInt> drop, KeyValuePair<PointInt, double> targetCell)
         {
             var scalarSpeed = GetHeight(map, drop.Value) - GetHeight(map, targetCell.Key);
-            var unitVectorSpeed = new Vector(drop.Value, targetCell.Key);
+            var unitVectorSpeed = VectorExtension.CreateFromTwoPoints(drop.Value, targetCell.Key);
             var speed = scalarSpeed * unitVectorSpeed;
             return speed + drop.Key.Speed;
         }
 
-        private static Dictionary<Point, double> _getMoveFactors(Dictionary<Point, double> moveRanks, double rankSum)
+        private static Dictionary<PointInt, double> _getMoveFactors(Dictionary<PointInt, double> moveRanks, double rankSum)
         {
-            Dictionary<Point, double> moveFactors;
+            Dictionary<PointInt, double> moveFactors;
             if (rankSum > 0)
                 moveFactors = moveRanks.ToDictionary(x => x.Key, x => x.Value / rankSum);
             else
@@ -93,11 +93,11 @@ namespace Erosio
             return moveFactors;
         }
 
-        private Dictionary<Point, double> _getMoveRanks(double[,] map, KeyValuePair<WaterDrop, Point> drop)
+        private Dictionary<PointInt, double> _getMoveRanks(double[,] map, KeyValuePair<WaterDrop, PointInt> drop)
         {
             var currentDropPosition = drop.Value;
             var dropObj = drop.Key;
-            var moveRanks = new Dictionary<Point, double>();
+            var moveRanks = new Dictionary<PointInt, double>();
             foreach (var targetCell in _neighborsGetter(currentDropPosition))
             {
                 if (!IsInMap(map, targetCell))
@@ -107,7 +107,8 @@ namespace Erosio
                     continue;
                 if (dropObj.Speed.Length > 0)
                 {
-                    var angle = Vector.GetAngle(dropObj.Speed, new Vector(currentDropPosition, targetCell));
+                    var targetSpeed = VectorExtension.CreateFromTwoPoints(currentDropPosition, targetCell);
+                    var angle = dropObj.Speed.GetAngleWith(targetSpeed);
                     var factor = 0.5 * Math.Abs(angle);
                     moveRanks[targetCell] = heightDiff / factor;
                 }
@@ -121,9 +122,9 @@ namespace Erosio
             return moveRanks;
         }
 
-        private static bool IsInMap(double[,] map, Point v) => v.X >= 0 && v.Y >= 0 && v.X < map.GetLength(0) && v.Y < map.GetLength(1);
+        private static bool IsInMap(double[,] map, PointInt v) => v.X >= 0 && v.Y >= 0 && v.X < map.GetLength(0) && v.Y < map.GetLength(1);
 
-        private static double GetHeight(double[,] map, Point v) => map[v.X, v.Y];
+        private static double GetHeight(double[,] map, PointInt v) => map[v.X, v.Y];
 
         #endregion
 
